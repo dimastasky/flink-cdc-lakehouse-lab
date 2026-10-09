@@ -1,0 +1,9 @@
+ARG SUPERSET_IMAGE
+FROM ${SUPERSET_IMAGE}
+USER root
+RUN uv pip install --python /app/.venv/bin/python --no-cache \
+    psycopg2-binary==2.9.10 'trino[sqlalchemy]==0.336.0'
+COPY config/superset_config.py /app/pythonpath/superset_config.py
+COPY scripts/superset_setup.py /app/lab/superset_setup.py
+COPY docker/superset-init.sh /app/lab/superset-init.sh
+USER superset

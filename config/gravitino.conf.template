@@ -1,0 +1,17 @@
+gravitino.iceberg-rest.host=0.0.0.0
+gravitino.iceberg-rest.httpPort=9001
+gravitino.iceberg-rest.catalog-config-provider=static-config-provider
+gravitino.iceberg-rest.catalog-backend=jdbc
+gravitino.iceberg-rest.catalog-backend-name=lab
+gravitino.iceberg-rest.uri=jdbc:postgresql://postgres-catalog:5432/catalog
+gravitino.iceberg-rest.jdbc-driver=org.postgresql.Driver
+gravitino.iceberg-rest.jdbc-user=lab_catalog
+gravitino.iceberg-rest.jdbc-password=${CATALOG_PASSWORD}
+gravitino.iceberg-rest.jdbc-initialize=true
+gravitino.iceberg-rest.warehouse=s3://warehouse/
+gravitino.iceberg-rest.io-impl=org.apache.iceberg.aws.s3.S3FileIO
+gravitino.iceberg-rest.s3-endpoint=http://minio:9000
+gravitino.iceberg-rest.s3-region=us-east-1
+gravitino.iceberg-rest.s3-path-style-access=true
+gravitino.iceberg-rest.s3-access-key-id=${S3_ACCESS_KEY}
+gravitino.iceberg-rest.s3-secret-access-key=${S3_SECRET_KEY}

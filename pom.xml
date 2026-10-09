@@ -1,0 +1,55 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>lab</groupId><artifactId>flink-cdc-lakehouse-lab</artifactId><version>1.0.0</version><packaging>pom</packaging>
+  <modules><module>flink-job</module><module>workload-generator</module></modules>
+  <properties>
+    <!-- IDE import does not execute mvnw. Defaults match versions.env. -->
+    <maven.compiler.release>17</maven.compiler.release>
+    <flink.version>1.20.5</flink.version>
+    <jdbc.version>42.7.10</jdbc.version>
+    <junit.version>5.12.2</junit.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.outputTimestamp>2026-10-03T00:00:00Z</project.build.outputTimestamp>
+  </properties>
+  <!-- Wrapper/Docker exports override IDE defaults with versions.env. -->
+  <profiles>
+    <profile>
+      <id>env-java-release</id>
+      <activation><property><name>env.JAVA_RELEASE</name></property></activation>
+      <properties><maven.compiler.release>${env.JAVA_RELEASE}</maven.compiler.release></properties>
+    </profile>
+    <profile>
+      <id>env-flink-version</id>
+      <activation><property><name>env.FLINK_VERSION</name></property></activation>
+      <properties><flink.version>${env.FLINK_VERSION}</flink.version></properties>
+    </profile>
+    <profile>
+      <id>env-jdbc-version</id>
+      <activation><property><name>env.JDBC_VERSION</name></property></activation>
+      <properties><jdbc.version>${env.JDBC_VERSION}</jdbc.version></properties>
+    </profile>
+    <profile>
+      <id>env-junit-version</id>
+      <activation><property><name>env.JUNIT_VERSION</name></property></activation>
+      <properties><junit.version>${env.JUNIT_VERSION}</junit.version></properties>
+    </profile>
+  </profiles>
+  <dependencyManagement><dependencies><dependency><groupId>org.junit</groupId><artifactId>junit-bom</artifactId><version>${junit.version}</version><type>pom</type><scope>import</scope></dependency></dependencies></dependencyManagement>
+  <dependencies><dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency></dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration><release>${maven.compiler.release}</release></configuration>
+      </plugin>
+    </plugins>
+    <pluginManagement><plugins>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.14.0</version></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.3</version></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId><version>3.4.2</version></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-resources-plugin</artifactId><version>3.3.1</version></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-clean-plugin</artifactId><version>3.4.1</version></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-shade-plugin</artifactId><version>3.6.0</version></plugin>
+  </plugins></pluginManagement></build>
+</project>

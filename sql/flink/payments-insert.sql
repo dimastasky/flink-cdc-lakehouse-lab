@@ -1,0 +1,1 @@
+INSERT INTO lake.oltp_mirror.payments_current SELECT payment_id, account_id, amount, currency, status, event_time, created_at, updated_at, row_version FROM default_catalog.default_database.payments_cdc

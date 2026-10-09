@@ -1,0 +1,22 @@
+jobmanager.rpc.address: flink-jobmanager
+rest.address: flink-jobmanager
+rest.bind-address: 0.0.0.0
+rest.port: 8081
+jobmanager.memory.process.size: 1024m
+taskmanager.memory.process.size: 1536m
+taskmanager.numberOfTaskSlots: ${TASK_SLOTS}
+parallelism.default: ${PARALLELISM}
+state.backend.type: hashmap
+state.checkpoint-storage: filesystem
+state.checkpoints.dir: s3://checkpoints/baseline/
+state.savepoints.dir: s3://savepoints/baseline/
+s3.endpoint: http://minio:9000
+s3.path.style.access: true
+s3.access-key: ${S3_ACCESS_KEY}
+s3.secret-key: ${S3_SECRET_KEY}
+execution.checkpointing.interval: ${CHECKPOINT_INTERVAL_MS} ms
+execution.checkpointing.timeout: ${CHECKPOINT_TIMEOUT_MS} ms
+execution.checkpointing.max-concurrent-checkpoints: 1
+execution.checkpointing.externalized-checkpoint-retention: RETAIN_ON_CANCELLATION
+# Java 17 options from Apache Flink release-1.20.5 default config.yaml (Apache-2.0).
+env.java.opts.all: --add-exports=java.base/sun.net.util=ALL-UNNAMED --add-exports=java.rmi/sun.rmi.registry=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-exports=java.security.jgss/sun.security.krb5=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.base/java.time=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED

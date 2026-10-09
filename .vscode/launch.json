@@ -1,0 +1,59 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "request": "launch",
+      "mainClass": "lab.WorkloadGenerator",
+      "projectName": "workload-generator",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "name": "Generator: dry run (no database)",
+      "args": [
+        "--mode",
+        "finite",
+        "--seed",
+        "42",
+        "--dry-run"
+      ]
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "mainClass": "lab.WorkloadGenerator",
+      "projectName": "workload-generator",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "name": "Generator: seed local PostgreSQL",
+      "args": [
+        "--mode",
+        "seed",
+        "--seed",
+        "42"
+      ],
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "JDBC_URL": "jdbc:postgresql://127.0.0.1:55432/payments?ApplicationName=lab-generator&connectTimeout=10&socketTimeout=20"
+      }
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "mainClass": "lab.WorkloadGenerator",
+      "projectName": "workload-generator",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "name": "Generator: finite workload on local PostgreSQL",
+      "args": [
+        "--mode",
+        "finite",
+        "--seed",
+        "42"
+      ],
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "JDBC_URL": "jdbc:postgresql://127.0.0.1:55432/payments?ApplicationName=lab-generator&connectTimeout=10&socketTimeout=20"
+      }
+    }
+  ]
+}

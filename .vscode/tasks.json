@@ -1,0 +1,147 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Java: test",
+      "type": "process",
+      "command": "${workspaceFolder}/mvnw",
+      "args": [
+        "-B",
+        "-ntp",
+        "test"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "JAVA_HOME": "/Users/dleventsov/Library/Java/JavaVirtualMachines/corretto-17.0.12/Contents/Home"
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": [
+        "$javac"
+      ]
+    },
+    {
+      "label": "Java: package",
+      "type": "process",
+      "command": "${workspaceFolder}/mvnw",
+      "args": [
+        "-B",
+        "-ntp",
+        "package"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "JAVA_HOME": "/Users/dleventsov/Library/Java/JavaVirtualMachines/corretto-17.0.12/Contents/Home"
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$javac"
+      ]
+    },
+    {
+      "label": "Lab: initialize",
+      "type": "process",
+      "command": "make",
+      "args": [
+        "init"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lab: build containers",
+      "type": "process",
+      "command": "make",
+      "args": [
+        "build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lab: run demo",
+      "type": "process",
+      "command": "make",
+      "args": [
+        "demo"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lab: status",
+      "type": "process",
+      "command": "make",
+      "args": [
+        "status"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lab: stop containers",
+      "type": "process",
+      "command": "make",
+      "args": [
+        "down"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Superset: start and connect databases",
+      "type": "process",
+      "command": "make",
+      "args": [
+        "superset-up"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Superset: status",
+      "type": "process",
+      "command": "make",
+      "args": [
+        "superset-status"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Superset: stop",
+      "type": "process",
+      "command": "make",
+      "args": [
+        "superset-down"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

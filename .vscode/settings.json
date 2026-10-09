@@ -1,0 +1,22 @@
+{
+  "java.configuration.runtimes": [
+    {
+      "name": "JavaSE-17",
+      "path": "/Users/dleventsov/Library/Java/JavaVirtualMachines/corretto-17.0.12/Contents/Home",
+      "default": true
+    }
+  ],
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.server.launchMode": "Standard",
+  "maven.executable.preferMavenWrapper": true,
+  "terminal.integrated.env.osx": {
+    "JAVA_HOME": "/Users/dleventsov/Library/Java/JavaVirtualMachines/corretto-17.0.12/Contents/Home",
+    "PATH": "/Users/dleventsov/Library/Java/JavaVirtualMachines/corretto-17.0.12/Contents/Home/bin:${env:PATH}"
+  },
+  "files.watcherExclude": {
+    "**/.cache/**": true,
+    "**/.runtime/**": true,
+    "**/.venv/**": true,
+    "**/target/**": true
+  }
+}

@@ -1,0 +1,7 @@
+# Explicit override: make stress-up. Requires ~12 GiB Docker memory (estimate).
+services:
+  flink-taskmanager:
+    deploy:
+      replicas: 2
+  workload-generator:
+    command: [--mode, continuous, --seed, '42', --rate, '500', --duration, '300', --batch-size, '100']

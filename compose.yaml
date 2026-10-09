@@ -1,0 +1,164 @@
+name: ${COMPOSE_PROJECT_NAME:-flink-cdc-lakehouse-lab}
+x-build: &build
+  context: .
+  dockerfile: docker/Dockerfile
+  args:
+    MAVEN_IMAGE: ${MAVEN_IMAGE}
+    FLINK_IMAGE: ${FLINK_IMAGE}
+    JAVA_IMAGE: ${JAVA_IMAGE}
+    PYTHON_IMAGE: ${PYTHON_IMAGE}
+    GO_IMAGE: ${GO_IMAGE}
+x-job-env: &job-env
+  JOB_MANAGER_RPC_ADDRESS: flink-jobmanager
+  CDC_PASSWORD: ${CDC_PASSWORD}
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+  S3_SECRET_KEY: ${S3_SECRET_KEY}
+  AWS_REGION: us-east-1
+  AWS_DEFAULT_REGION: us-east-1
+  PARALLELISM: ${PARALLELISM}
+  TASK_SLOTS: ${TASK_SLOTS}
+  CHECKPOINT_INTERVAL_MS: ${CHECKPOINT_INTERVAL_MS}
+  CHECKPOINT_TIMEOUT_MS: ${CHECKPOINT_TIMEOUT_MS}
+  CHECKPOINT_MIN_PAUSE_MS: ${CHECKPOINT_MIN_PAUSE_MS}
+  RESTART_ATTEMPTS: ${RESTART_ATTEMPTS}
+x-superset: &superset
+  profiles: [bi]
+  image: flink-cdc-lakehouse-lab/superset:${SUPERSET_VERSION}
+  build:
+    context: .
+    dockerfile: docker/Dockerfile.superset
+    args: {SUPERSET_IMAGE: '${SUPERSET_IMAGE}'}
+  environment:
+    SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
+    SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-}
+    SUPERSET_DATABASE_PASSWORD: ${SUPERSET_DATABASE_PASSWORD:-}
+    SUPERSET_ADMIN_USERNAME: ${SUPERSET_ADMIN_USERNAME:-admin}
+    SUPERSET_ADMIN_PASSWORD: ${SUPERSET_ADMIN_PASSWORD:-}
+    SUPERSET_BI_PASSWORD: ${SUPERSET_BI_PASSWORD:-}
+    GUNICORN_TIMEOUT: '120'
+    SERVER_WORKER_AMOUNT: '1'
+    SERVER_THREADS_AMOUNT: '4'
+  depends_on:
+    superset-db: {condition: service_healthy}
+x-flink: &flink
+  image: flink-cdc-lakehouse-lab/flink:1.0.0
+  build: {<<: *build, target: flink}
+  environment: *job-env
+  volumes:
+    - ${LAB_STATE_DIR:-./.runtime}/config/flink-conf.yaml:/config/flink.yaml:ro
+  stop_grace_period: 30s
+services:
+  postgres-oltp:
+    image: ${POSTGRES_IMAGE}
+    command: [postgres, -c, wal_level=logical, -c, max_replication_slots=12, -c, max_wal_senders=12, -c, timezone=UTC, -c, max_slot_wal_keep_size=2GB]
+    environment:
+      POSTGRES_DB: payments
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}
+      APP_PASSWORD: ${APP_PASSWORD}
+      CDC_PASSWORD: ${CDC_PASSWORD}
+    ports: ["127.0.0.1:${PG_PORT}:5432"]
+    volumes: ["oltp-data:/var/lib/postgresql/data", "./sql/postgres:/sql:ro"]
+    healthcheck: {test: [CMD-SHELL, "pg_isready -U postgres -d payments"], interval: 3s, timeout: 3s, retries: 30}
+  postgres-catalog:
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: catalog
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}
+      CATALOG_PASSWORD: ${CATALOG_PASSWORD}
+    volumes: ["catalog-data:/var/lib/postgresql/data", "./docker/catalog-init.sh:/docker-entrypoint-initdb.d/10-catalog.sh:ro"]
+    healthcheck: {test: [CMD-SHELL, "pg_isready -U lab_catalog -d catalog"], interval: 3s, timeout: 3s, retries: 30}
+  minio:
+    image: flink-cdc-lakehouse-lab/minio:1.0.0
+    build: {<<: *build, target: minio}
+    command: [server, /data, --console-address, ':9001']
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports: ["127.0.0.1:${MINIO_PORT}:9000", "127.0.0.1:${MINIO_CONSOLE_PORT}:9001"]
+    volumes: ["minio-data:/data"]
+    healthcheck: {test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:9000/minio/health/ready',timeout=2)"], interval: 3s, timeout: 3s, retries: 30}
+  minio-init:
+    profiles: [tools]
+    image: flink-cdc-lakehouse-lab/mc:1.0.0
+    build: {<<: *build, target: minio-client}
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+    volumes: ["./config/minio-policy.json:/config/minio-policy.json:ro"]
+    depends_on: {minio: {condition: service_healthy}}
+  gravitino-iceberg-rest:
+    image: flink-cdc-lakehouse-lab/gravitino:1.0.0
+    build: {<<: *build, target: gravitino}
+    environment:
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+    volumes: ["${LAB_STATE_DIR:-./.runtime}/config/gravitino.conf:/opt/gravitino/conf/gravitino-iceberg-rest-server.conf:ro"]
+    ports: ["127.0.0.1:${CATALOG_PORT}:9001"]
+    depends_on: {postgres-catalog: {condition: service_healthy}, minio: {condition: service_healthy}}
+    healthcheck: {test: [CMD-SHELL, "curl -fsS --max-time 3 http://localhost:9001/iceberg/v1/config >/dev/null"], interval: 5s, timeout: 4s, retries: 40}
+  flink-jobmanager:
+    <<: *flink
+    command: jobmanager
+    ports: ["127.0.0.1:${FLINK_PORT}:8081"]
+    healthcheck: {test: [CMD-SHELL, "curl -fsS --max-time 3 http://localhost:8081/overview >/dev/null"], interval: 5s, timeout: 4s, retries: 40}
+  flink-taskmanager:
+    <<: *flink
+    command: taskmanager
+    depends_on: {flink-jobmanager: {condition: service_healthy}}
+    healthcheck: {test: [CMD-SHELL, "pgrep -f TaskManagerRunner >/dev/null"], interval: 5s, timeout: 4s, retries: 40}
+  bootstrap:
+    <<: *flink
+    profiles: [tools]
+    command: [bootstrap]
+    depends_on: {gravitino-iceberg-rest: {condition: service_healthy}}
+  job-submitter:
+    profiles: [tools]
+    image: flink-cdc-lakehouse-lab/submitter:1.0.0
+    build: {<<: *build, target: submitter}
+    environment: {SAVEPOINT: '${SAVEPOINT:-}'}
+    volumes: ["${LAB_STATE_DIR:-./.runtime}:/state"]
+    depends_on: {flink-jobmanager: {condition: service_healthy}}
+  workload-generator:
+    profiles: [tools]
+    image: flink-cdc-lakehouse-lab/generator:1.0.0
+    build: {<<: *build, target: generator}
+    environment: {APP_PASSWORD: '${APP_PASSWORD}'}
+    command: [--mode, continuous, --seed, '${SEED}', --rate, '${RATE}', --duration, '${DURATION}', --batch-size, '${BATCH_SIZE}']
+    stop_grace_period: 30s
+    depends_on: {postgres-oltp: {condition: service_healthy}}
+  trino:
+    image: ${TRINO_IMAGE}
+    ports: ["127.0.0.1:${TRINO_PORT}:8080"]
+    environment: {TZ: UTC}
+    volumes:
+      - ${LAB_STATE_DIR:-./.runtime}/config/iceberg.properties:/etc/trino/catalog/iceberg.properties:ro
+      - ./config/trino-config.properties:/etc/trino/config.properties:ro
+      - ./config/trino-jvm.config:/etc/trino/jvm.config:ro
+    depends_on: {gravitino-iceberg-rest: {condition: service_healthy}}
+    healthcheck: {test: [CMD-SHELL, "curl -fsS --max-time 3 http://localhost:8080/v1/info >/dev/null"], interval: 5s, timeout: 4s, retries: 40}
+  superset-db:
+    profiles: [bi]
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: superset
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: ${SUPERSET_DATABASE_PASSWORD:-}
+    volumes: ["superset-data:/var/lib/postgresql/data"]
+    healthcheck: {test: [CMD-SHELL, "pg_isready -U superset -d superset"], interval: 3s, timeout: 3s, retries: 30}
+  superset-init:
+    <<: *superset
+    command: [/bin/sh, /app/lab/superset-init.sh]
+    healthcheck: {disable: true}
+  superset:
+    <<: *superset
+    ports: ["127.0.0.1:${SUPERSET_PORT:-18088}:8088"]
+    healthcheck: {test: [CMD-SHELL, "curl -fsS --max-time 3 http://localhost:8088/health >/dev/null"], interval: 5s, timeout: 4s, retries: 40, start_period: 30s}
+volumes:
+  superset-data:
+  oltp-data:
+  catalog-data:
+  minio-data:
